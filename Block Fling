@@ -1,0 +1,73 @@
+--Billybobtijoseph
+--6/21/20
+
+--[[
+  The purpose of this script is to simulate a rock being shot out of lava.
+--]]
+
+wait(math.random(1,4))
+--[local]
+local debris = game:GetService("Debris")
+local rock = script:WaitForChild("ROCK")
+local ran = Random.new(tick())
+------	------	-------	 -------
+
+rock.Parent = nil --remove.
+
+function getPosition() --This will determine the position of where the rock will be spawned.
+	
+	local halfSize = script.Parent.Size * .5
+	local objPos = Vector3.new(ran:NextNumber(-halfSize.X, halfSize.X), 0, ran:NextNumber(-halfSize.Z, halfSize.Z))
+	--[CREDIT:] https://devforum.roblox.com/t/how-to-position-a-part-randomly-on-a-part/127670/29
+	
+	return objPos --Return the chosen position.
+end
+
+function makeBLOCK() --This will create a new block.
+	--Variables:
+	local cl = rock:Clone()
+	local location = getPosition()
+	-------
+	
+	cl.Hot.Anchored = false --Make sure the block can be moved.
+	cl.Hot.Velocity = Vector3.new(math.random(-20,20), math.random(50,110), math.random(-20,20)) -- Push the blocks up and put them in different directions using velocit
+	cl.Parent = script.Parent --Allow the part to be 'born'
+	cl:SetPrimaryPartCFrame(CFrame.new(script.Parent.CFrame * location)) --Give the part a location.
+
+	
+	cl.Hot.Touched:Connect(function(hit) --Each time the part is touched,
+		if hit and hit.Parent then --IF it was hit
+			if hit.Parent:FindFirstChild("Humanoid") then --IF it was determined to be a human
+				local humanoid = hit.Parent.Humanoid
+				
+				if humanoid.Health > 0 then --IF that human is alive
+					humanoid.Sit = true --make them sit
+					humanoid.PlatformStand = true --also trip them
+					
+					wait(math.random(5,6)) --cooldown
+					
+					if humanoid ~= nil then --if the human is still a thing
+						humanoid.PlatformStand = false --make sure they aren't trippin'
+					end
+				end
+				
+			end
+		end
+	end)
+	
+	debris:AddItem(cl,math.random(6,12)) --allow the part to die within (,) seconds after being 'born'
+end
+
+while true do --Infinite loop.
+	wait(math.random(3,8)) --Breathe.
+	--wait(1) --for testing purposes.
+	
+	for i = 1, math.random(1,6) do --Create (,) blocks
+		makeBLOCK() --invoke the block function.
+		wait(math.random(0,0.3)) --breathe to create some effect.
+	end
+end
+
+
+
+
