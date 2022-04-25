@@ -1,0 +1,38 @@
+--[[
+  The purpose of this script is to be able to compare two arrays and return true/false based on
+  if the two arrays are equal or not in information.
+--]]
+
+local a = { --array 1.
+	["TEST"] = {"H", "I"},
+	"CAAP",
+}
+local b = { --array 2.
+	["TEST"] = {},
+	"CAAP",
+}
+
+--Compare to see if the two arrays are the same or not.
+local function compare(arr1, arr2)
+	if #arr1 ~= #arr2 then return false end --IF the arrays are differen then return false.
+	
+	for i, v in pairs(arr1) do --Loop through arr1.
+		if (typeof(v) == "table") then --If the child is a table,
+			if (compare(arr2[i], v) == false) then --start over and look through the next table.
+				return false
+			end
+		else --else if the child is not a table then
+			if (v ~= arr2[i]) then --IF the child is different than in arr2 then
+				return false --this means that they do not match up.
+			end
+		end
+	end
+	return true --return true as everything matched up correctly.
+end
+
+print(compare(a,b)) --Print the output.
+
+
+
+
+
