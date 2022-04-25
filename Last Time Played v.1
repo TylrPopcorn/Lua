@@ -1,0 +1,140 @@
+--TylrPopcorn
+--[[
+  This is just an example test that was written up. The purpose of this is to load and save when the player last joined into the ROBLOX server.
+--]]
+local _DataStore = game:GetService("DataStoreService"):GetDataStore("TIME_PLAYED")
+
+local info = {
+	
+	cmonth = os.date("!*t")["month"]; --The current month it is of the year.
+	cyear = math.floor(os.time()/60/60/24/365.25+1970); --Determine the current year.
+	cday = os.date("!*t")["day"]; --Determine the current day.
+	
+	playerTable = {}; --Used to hold the player info.
+}
+
+
+game.Players.PlayerAdded:Connect(function(Plr)
+	wait(1)
+	
+	local loadKEY = (Plr.Name .. ": " .. 1); --The key needs to have a(n) 'ID' number with it so we shall put 1 after any key.
+	local lastTimePlayed = nil
+			
+	--Variables:
+	local cmonth = info["cmonth"];
+	print(cmonth)
+	local cday = info["cday"];
+	local cyear = info["cyear"];
+			
+	--Clarify the things we want to load:
+	local saveTable = {--ALL of the things that I want to check and load.
+			lastTimePlayed
+	}
+			
+			
+	local attempts, maxAttempts = 0, 5; --#of attempts, #of attempts allowed.
+	local Load_ATTEMPT_Succes; --Used to determine if the loading functiion was successful.
+	local Data; --Used to hold the previous saved data.
+	
+	repeat --Repeat
+		wait() --WAIT
+				
+		attempts = attempts + 1 --Start counting up how many times the function is going to attempt to load the data.
+		Load_ATTEMPT_Succes = pcall(function() --IF this function errors, it will not stop the whole script from running.
+			Data = _DataStore:GetAsync(loadKEY, saveTable) --ATTEMPT to load the previous saved data.
+		end)
+			
+		if not Load_ATTEMPT_Succes then wait(1) end --IF the function was NOT a success then, wait and retry.
+				
+	until attempts >= maxAttempts or Load_ATTEMPT_Succes == true and Data ~= nil --Until the attempts has exceeded the limit OR the function was a success AND the data isn't nothing.
+			
+	wait(math.random(0.2,0.6)) --.
+			
+	if Load_ATTEMPT_Succes == true and Data ~= nil then --IF the function was a success then,
+		lastTimePlayed = Data[1] --Load the data.
+	else --else
+		lastTimePlayed = {Month = info.cmonth, Day = info.cday, Year = info.cyear}  --save the current date.
+	end
+	
+	if not table.find(info.playerTable, Plr.Name) then
+		info.playerTable[#info.playerTable + 1] = Plr.Name
+		info.PlayerTable[Plr.Name] = {
+				lastSavedDate = lastTimePlayed; 
+			}
+	end
+	
+	if lastTimePlayed["Month"] >= cmonth then --If the saved month if greater than or equal to the current month then
+		if lastTimePlayed["Year"] == cyear - 1 then --if the last saved year was 1 year before the current year then 
+			if cday >= lastTimePlayed["Day"] then --if the current day is greater than or equal to the last saved day then
+				--It has been a year.
+			end
+		end
+	else
+		if lastTimePlayed["Year"] == cyear - 2 then --if the last saved year was 1 year before the current year then 
+			--it has probably been more than a year.
+		end
+	end
+		
+end)
+
+game.Players.PlayerRemoving:Connect(function(Plr)
+	wait(1)
+	
+	local saveKEY = (Plr.Name ..": " .. 1); --The key needs to have a(n) 'ID' number with it so we shall put 1 after any key.
+	local attempts, maxAttempts = 0, math.random(4,7) --Used for keeping track of how many attempts the function uses to save.
+	local Save_ATTEMPT_success; --Used to determine if the save was a success or not.
+					
+	repeat --Repeat,
+		wait() --Just incase the game were to crash without this... WAIT.
+		attempts = attempts + 1 --Start counting the attempts to get a previous saved data.
+					
+		Save_ATTEMPT_success = pcall(function() --IF this function errors, it will not stop the whole script.
+			_DataStore:GetAsync(saveKEY) --Attempt to get some kind of previous data from before.
+		end)
+						
+		if not Save_ATTEMPT_success then wait(math.random(1,2)) end --IF the function above was not a success, wait and then retry
+	until attempts >= maxAttempts or Save_ATTEMPT_success --until the function has tried the maxAttempts value or more times OR the function was a success.
+					
+	wait(0.5) ----------
+					
+	if Save_ATTEMPT_success then --Success is either true or false. (IF the previous data was found then, (true))
+		
+		--Variables:
+		Save_ATTEMPT_success = nil --Reset the success variable so we can use it again.
+		attempts = 0 --Reset the attempts variable so it can be used again.
+		maxAttempts = math.random(4,7) --Change the max attempts to something new.
+						
+		local saveTable = { --This is a folder that holds everything we want to save.
+			info.playerTable[Plr.Name].lastSavedDate;
+		}----------------
+						
+		repeat --Repeat
+			wait() --Just incase the game were to crash without this... WAIT
+			attempts = attempts + 1 --Start counting the attempts to get a previous saved data.
+					
+			Save_ATTEMPT_success = pcall(function() --IF this function errors, it will not stop the whole script.
+				_DataStore:SetAsync(saveKEY, saveTable) --Attempt to save the info.
+			end)
+						
+			if not Save_ATTEMPT_success then wait(1) end --IF the function above was not a success, wait and then retry
+							
+		until attempts >= maxAttempts or Save_ATTEMPT_success ----until the function has tried the maxAttempts value or more times OR the function was a success.
+						
+		wait(0.2) ---------
+						
+		if Save_ATTEMPT_success then --IF the function saving was a success then,
+			--Tell the game:
+			print("Success.")
+		else --IF the function saving was NOT a success then,
+			--tell the game:
+			print("Error saving.")
+		end
+						
+	else --IF the function could NOT find any kinds of previous data then,
+		print("Could not save.")
+									
+	end
+						
+	
+end)
+
