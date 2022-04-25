@@ -1,0 +1,561 @@
+--billybobtyjoseph (TylrPopcorn)
+--[[
+  The purpose of this script is to get the current time and keep track of when the next update should be.
+  If no recent time was found then a new save will be created.
+]]
+
+local Season_DataStore = game:GetService("DataStoreService"):GetDataStore("SEASON_TEST2")  --Used to save and load the season stuff.
+
+local Data_Folder = {
+	
+	Season_Data = { --All of the season data stuff goes here.
+		--[1/29/20] 
+		season = (0); --The current season the game is it. The default is 0.
+		Data_KEY = ("Season_KEY>>Beta_TEST1____"); --The key name for the data to be saved under.
+		Season_Updates = {0, 10 , 0, math.random(1,2), math.random(3,5),math.random(1,59)}; --How long it will be before the next season occurs. {#months, #days, #years, #hours, #minutes, #seconds}.
+
+		--[NOTE: These times are in Coordinated Universal Time (UTC)]
+		cmonth = os.date("!*t")["month"]; --The current month it is of the year.
+		cyear = math.floor(os.time()/60/60/24/365.25+1970); --Determine the current year.
+		cday = os.date("!*t")["day"]; --Determine the current day.
+		csec = (tick()%60); --Determine the current second of the day.
+		cmin = ((tick()/60)%60); --Determine the current minute of the day.
+		chour = ((tick()/3600)%24); --Determine the current hour of the day.
+		--[NOTE: These times are automatically updated in the player_check. Use them to keep track of the current time in game. [4/6/20]]
+
+		Last_Month_Saved = (0); --The last month it was saved.'
+		Last_Year_Saved = (0); --The last year it was saved.
+		Last_Day_Saved = (0); --The last day it was saved.
+		Last_Sec_Saved = (0); --The last second the season was saved.
+		Last_Min_Saved = (0); --The last minute the season was saved.
+		Last_Hour_Saved = (0); --The last hour the season was saved.
+
+		Next_SeasonUpdate_Month = (0); --The next month that the season will change at.
+		Next_SeasonUpdate_Year = (0); --The next year that the season will change at.
+		Next_SeasonUpdate_Day = (0); --The next day that the season will change at.
+		Next_SeasonUpdate_Sec = (0); --The next second the season will change at.
+		Next_SeasonUpdate_Min = (0); --The next minute the season will change at.
+		Next_SeasonUpdate_Hour = (0); --The next hour the season will change at.
+
+		Month_DATA = {  --Important info for our months.
+			["January"] = {Season = ("Winter"), Numb = (1), Days = (31), }; --{Weather season, #numbOfmonth, #daysinMonth}
+			["February"] = {Season = ("Winter"), Numb = (2), Days = (28), };
+			["March"] =  {Season = ("Spring"), Numb = (3), Days = (31), };
+			["April"] =  {Season = ("Spring"), Numb = (4), Days = (30), };
+			["May"] =   {Season = ("Spring"), Numb = (5), Days = (31), };
+			["June"] =  {Season = ("Summer"), Numb = (6), Days = (30), };
+			["July"] =  {Season = ("Summer"), Numb = (7), Days = (31),}; 
+			["August"] =  {Season = ("Summer"), Numb = (8), Days = (31), };
+			["September"] =  {Season = ("Autumn"), Numb = (9), Days = (30), };
+			["October"] =  {Season = ("Autumn"), Numb = (10), Days = (31), };
+			["November"] =  {Season = ("Autumn"), Numb = (11), Days = (30), };
+			["December"] =  {Season = ("Winter"), Numb = (12), Days = (31), }; 
+		},
+	}
+}
+-------------------------
+local sznData = Data_Folder["Season_Data"];
+print(sznData.cmonth .. '/' .. sznData.cday .. '/' .. sznData.cyear) --State the current date.
+
+function Season_Updater(Objective)
+	--This is for keeping track of season data. Updating, loading, etc.
+	--[1/29/20]. Billy.
+
+	wait(math.random(0.1,0.7))  --Breathe.
+	--[DATA STORE LIMITS]: [https://developer.roblox.com/en-us/articles/Datastore-Errors]
+
+	local functions = { --ALL of the functions that the season_Updater does.
+
+		["Load"] = function()
+			--[1/30/20] --Billy
+
+			local loadKEY = (sznData.Data_KEY .. 1); --The key needs to have a(n) 'ID' number with it so we shall put 1 after any key.
+
+			Data_Folder.Season_Data.csec = (tick()%60); --Determine the current second of the day.
+			Data_Folder.Season_Data.cmin = ((tick()/60)%60); --Determine the current minute of the day.
+			Data_Folder.Season_Data.chour = ((tick()/3600)%24); --Determine the current hour of the day.
+			Data_Folder.Season_Data.cday = os.date("!*t")["day"]; --Determine the current day in UTC TIME.	
+
+			--Variables:
+			local cmonth = sznData["cmonth"];
+			local cday = sznData["cday"];
+			local cyear = sznData["cyear"];
+			local csec = sznData["csec"];
+			local cmin = sznData["cmin"];
+			local chour = sznData["chour"];
+
+			--Clarify the things we want to load:
+			local saveTable = {--ALL of the things that I want to check and load.
+				sznData.Last_Month_Saved, --The last month saved.
+				sznData.Last_Year_Saved, --The last year saved.
+				sznData.Last_Day_Saved, --The last day saved.
+				sznData.Last_Sec_Saved, --The last second saved.
+				sznData.Last_Minute_Saved, --The last minute saved.
+				sznData.Last_Hour_Saved, --The last hour saved.
+				sznData.Next_SeasonUpdate_Month, --The next month the season will update at.
+				sznData.Next_SeasonUpdate_Year, --the next year that the season will update at.
+				sznData.Next_SeasonUpdate_Day, --the next day that the season will update at.
+				sznData.Next_SeasonUpdate_Sec, --the next second that the season will update at.
+				sznData.Next_SeasonUpdate_Min, --the next minute that the season will update at.
+				sznData.Next_SeasonUpdate_Hour, --the next hour that the season will update at.
+			}
+
+
+			local attempts, maxAttempts = 0, 5; --#of attempts, #of attempts allowed.
+			local Load_ATTEMPT_Succes; --Used to determine if the loading functiion was successful.
+			local Data; --Used to hold the previous saved data.
+
+			repeat --Repeat
+				wait() --WAIT
+
+				attempts = attempts + 1 --Start counting up how many times the function is going to attempt to load the data.
+				Load_ATTEMPT_Succes = pcall(function() --IF this function errors, it will not stop the whole script from running.
+					Data = Season_DataStore:GetAsync(loadKEY, saveTable) --ATTEMPT to load the previous saved data.
+				end)
+
+				if not Load_ATTEMPT_Succes then wait(1) end --IF the function was NOT a success then, wait and retry.
+
+			until attempts >= maxAttempts or Load_ATTEMPT_Succes == true and Data ~= nil --Until the attempts has exceeded the limit OR the function was a success AND the data isn't nothing.
+
+			wait(math.random(0.2,0.6)) --.
+
+			if Load_ATTEMPT_Succes == true and Data ~= nil then --IF the function was a success then,
+
+				--LOAD VALUES:
+				sznData.season = Data[1] --Set the value to the previously saved season.
+				sznData.Last_Month_Saved = Data[2] --Set the value to the previously saved month.
+				sznData.Last_Year_Saved = Data[3] --Set the value to the previously saved year.
+				sznData.Last_Day_Saved = Data[4] --Set the value to the previously saved day.
+				sznData.Last_Sec_Saved = Data[5] --Set the value to the previously saved second.
+				sznData.Last_Min_Saved = Data[6] --Set the value to the previously saved minute.
+				sznData.Last_Hour_Saved = Data[7] --set the value to the previously saved hour.
+				sznData.Next_SeasonUpdate_Month = Data[8] --Set the value so the game knows when to update.
+				sznData.Next_SeasonUpdate_Year = Data[9] --Set the value so the game knows when to update.
+				sznData.Next_SeasonUpdate_Day = Data[10] --Set the value so the game knows when to update.
+				sznData.Next_SeasonUpdate_Sec = Data[11] --Set the value so the game knows when to update.
+				sznData.Next_SeasonUpdate_Min = Data[12] --Set the value so the game knows when to update.
+				sznData.Next_SeasonUpdate_Hour = Data[13] --Set the value so the game knows when to update.
+				----[NOTE: Because we saved a table, we can access that table easily by knowing which spot goes with what.]
+				--------
+
+				--Notify game:
+				print("[*] Message-]|: Current Season: " ..  sznData.season)
+				print("[*] Message-]|: Last season update: [" .. sznData.Last_Month_Saved .. "/" .. sznData.Last_Day_Saved .. "/" .. sznData.Last_Year_Saved .. "] @ [" .. sznData.Last_Hour_Saved .. ":" .. sznData.Last_Min_Saved .. ":" .. sznData.Last_Sec_Saved .. "]")
+				print("[*] Message-]|: The next season update will be: [" .. sznData.Next_SeasonUpdate_Month .. "/" .. sznData.Next_SeasonUpdate_Day .. "/" .. sznData.Next_SeasonUpdate_Year .. "] @ [" .. sznData.Next_SeasonUpdate_Hour .. ":" .. sznData.Next_SeasonUpdate_Min .. ":" .. sznData.Next_SeasonUpdate_Sec .. "]")
+
+				local UTC_TIME = math.floor(chour) + 4 --Get the current time in UTC time so it matches up CORRECTLY with the current date.
+				if UTC_TIME >= 24 then --IF the hour appears to be during the next day then,
+					cday = sznData.cday - 1 --The game will think it is a new day and the wrong time after 12 AM. So we must set the day backward to our time for the time being.
+				end
+
+				--Check for season update:
+				local SeasonUpdate_Contributors = { --Everything that contributes to the possibility of the season being update. 
+					--IF:
+					[1] = cmonth == sznData.Next_SeasonUpdate_Month, --the current month is equal to the next season update month.
+					[2] = cmonth > sznData.Next_SeasonUpdate_Month, --the current month is greater than the next season update month.
+					[3] = cday > sznData.Next_SeasonUpdate_Day, --the current day is greater than the next season update day.
+					[4] = cday == sznData.Next_SeasonUpdate_Day, --the current day is equal to the next season update day.
+					[5] = cyear == sznData.Next_SeasonUpdate_Year, --the current year is equal to the next season update year.
+					[6] = cyear > sznData.Next_SeasonUpdate_Year, --The current year is greater than or equal to the next season update year.
+					[7] = math.floor(csec) >= sznData.Next_SeasonUpdate_Sec, --The current second is greater than the next season update second.
+					[8] = math.floor(chour) > sznData.Next_SeasonUpdate_Hour, --the current hour is greater than the next season update hour.
+					[9] = math.floor(chour) == sznData.Next_SeasonUpdate_Hour, -- the current hour is equal to the next season update hour.
+					[10] = math.floor(cmin) >= sznData.Next_SeasonUpdate_Min, --the current minute is greater than or equal to the next season update minute.
+					--then
+				}
+
+				local UPDATE_NEEDED = false	 --Used to determine if the game needs to update real quickly.
+
+				if SeasonUpdate_Contributors[6] or SeasonUpdate_Contributors[2]  then --IF the current year is greater than the next season update year or the current month is greater than the next season update month or the current day is greater than the next update day then,
+					UPDATE_NEEDED = true --the game definitely needs an update.
+					print("Update needed3")
+				end
+
+				if SeasonUpdate_Contributors[3] then --IF the current day is greater than the next season update day then
+					if SeasonUpdate_Contributors[1] and SeasonUpdate_Contributors[5] then --if the current month and year match up correctly then
+						UPDATE_NEEDED = true --the game needs an update.
+						print("Update needed4")
+					end
+				end
+
+				if SeasonUpdate_Contributors[4] then --If the current day is equal to the next season update day then,
+					if SeasonUpdate_Contributors[1] and SeasonUpdate_Contributors[5] then --check to make sure the current month and year are correct. If so,
+						if SeasonUpdate_Contributors[8] then --check to see if the hour is greater than the next season update hour.
+							print("Update needed1")
+							print(Data_Folder.Season_Data.chour)
+							UPDATE_NEEDED = true --Tell the game that an update is needed.
+						elseif SeasonUpdate_Contributors[9] then --If the hour is the same,
+							if SeasonUpdate_Contributors[10] then --check the minutes
+								if SeasonUpdate_Contributors[7] then --check the seconds.
+									UPDATE_NEEDED = true --Tell the game that an update is needed.
+									print("Update needed2")
+								end
+							end
+						end
+					end
+				end
+
+				if UPDATE_NEEDED == true then --If an update was needed, then
+					print("[*] Message-]|: [SEASON UPDATE!]") --Tell the game.
+
+					local UpdateCode = ("NeedsAnUpdate") --This is the code that shall be returned.
+					return UpdateCode --Tell the script that the game needs to update.
+					--[NOTE: At this point, THIS function stops.]
+				end
+
+				return true --Tell the game that the load was a success.
+
+			else
+				print("[~] ERR: [LOAD SEASON]|: COULD NOT LOAD CURRENT SEASON IN DATA FILES. [SEASON UPDATER]") --Notify the game of the error.
+				return false --Tell the game that the load was not a success.
+			end --.
+
+		end,
+
+		["Save"] = function()
+
+			--[1/29/20] --BILLY.
+			--[NOTE: This function should only occur when the season needs to update.]
+
+			Data_Folder.Season_Data.csec = (tick()%60); --Determine the current second of the day.
+			Data_Folder.Season_Data.cmin = ((tick()/60)%60); --Determine the current minute of the day.
+			Data_Folder.Season_Data.chour = ((tick()/3600)%24); --Determine the current hour of the day.
+			Data_Folder.Season_Data.cday = os.date("!*t")["day"]; --UTC TIME.
+
+			local cmonth = sznData["cmonth"];
+			local cday = sznData["cday"];
+			local cyear = sznData["cyear"];
+			local cmin = sznData["cmin"];
+			local csec = sznData["csec"];
+			local chour = sznData["chour"];
+
+
+			local UTC_TIME = math.floor(chour) + 4 --Get the current time in UTC time so it matches up CORRECTLY with the current date.
+			if UTC_TIME >= 24 then --IF the hour appears to be during the next day then,
+				cday = sznData.cday - 1 --The game will think it is a new day and the wrong time after 12 AM. So we must set the day backward to our time for the time being.
+			end
+
+			--Update the values:
+			sznData.Last_Month_Saved = cmonth --Set the last saved month to the current month.
+			sznData.Last_Day_Saved = cday --set the last saved day to the current day.
+			sznData.Last_Year_Saved = cyear --set the last saved year to the current year.
+			sznData.Last_Min_Saved = math.floor(cmin) --set the last minute saved to the current minute.
+			sznData.Last_Hour_Saved = math.floor(chour) --Set the last hour saved to the current hour.
+			sznData.Last_Sec_Saved = math.floor(csec) --Set the last second saved to the current second.
+
+			wait(math.random(2,7)) --Breathe.
+
+			local Season_Updates = sznData["Season_Updates"];
+
+			--Set the new update values:
+			sznData.season = sznData.season + 1
+			sznData.Next_SeasonUpdate_Month = cmonth + Season_Updates[1] --Set the next value based on wherever the currnt day is.
+			sznData.Next_SeasonUpdate_Day = cday + Season_Updates[2]
+			sznData.Next_SeasonUpdate_Year = cyear + Season_Updates[3]
+			sznData.Next_SeasonUpdate_Hour = math.floor(chour + Season_Updates[4])
+			sznData.Next_SeasonUpdate_Min = math.floor(cmin + Season_Updates[5])
+			sznData.Next_SeasonUpdate_Sec = math.floor(csec + Season_Updates[6])
+
+
+			local functions = { --ALL of the save functions.
+
+				["FIX_DATE"] = function() --This is for fixing the date so it is always working.
+
+					if sznData.Next_SeasonUpdate_Sec >= 60 then --If the next season update second is greater than 60 (which would not be real time) then
+						local Subtraction = (sznData.Next_SeasonUpdate_Sec - 60) --subtract 60 seconds from the next seseason update seconds.
+
+						if Subtraction < 0 then --If the subtraction is less than 0
+							Subtraction = 0 --make it 0.
+						end
+
+						sznData.Next_SeasonUpdate_Sec = Subtraction --update the season updater with the new  time.
+						sznData.Next_SeasonUpdate_Min = sznData.Next_SeasonUpdate_Min + 1 --Since the seconds was not a real time, add 1 minute.
+					end
+
+					if sznData.Next_SeasonUpdate_Min >= 60 then --If the next season update minutes is not a real time.
+						local Subtraction = (sznData.Next_SeasonUpdate_Min - 60) --subtract 60 from the time,
+
+						if Subtraction < 0 then --If the subtraction is less than 0 (not a real time)
+							Subtraction = 0 --make it 0. (a real time)
+						end
+
+						sznData.Next_SeasonUpdate_Min = Subtraction --Update the new time.
+						sznData.Next_SeasonUpdate_Hour = sznData.Next_SeasonUpdate_Hour + 1 --Since the minues was greater than 60, add 1 hour to the time.
+					end
+
+					if sznData.Next_SeasonUpdate_Hour >= 24 then --IF the next season update hours are greater than 24 (not a real time)
+						local Subtraction = (sznData.Next_SeasonUpdate_Hour - 24) --subtract 24 from the new time.
+
+						if Subtraction < 0 then --If the subtraction is less than 0 (not a real time)
+							Subtraction = 0 --make it 0.
+						end
+
+						sznData.Next_SeasonUpdate_Hour = Subtraction --update it to the next season update time.
+						sznData.Next_SeasonUpdate_Day = sznData.Next_SeasonUpdate_Day + 1 --because the hours were greater than 24, add 1 day to the time.
+					end
+
+					if sznData.Next_SeasonUpdate_Month > 12 then --If the next scheduled month is not a real month,
+						local Subtraction = (sznData.Next_SeasonUpdate_Month - 12) --Take the month number and subtract it by 12,
+
+						sznData.Next_SeasonUpdate_Month = Subtraction --Update the value to the new REAL month.
+						sznData.Next_SeasonUpdate_Year = (cyear + 1) --then add 1 to the year to indicate the next year.
+					end
+
+					if sznData.Next_SeasonUpdate_Month <=0 or sznData.Next_SeasonUpdate_Month > 12 then --if the month is non-existant in a negative way,
+						sznData.Next_SeasonUpdate_Month = 1 --set it to restart.
+					end
+
+					local monthData = sznData["Month_DATA"];
+
+					for nam,obj in pairs(monthData) do --Get the children of the month_DATA portion
+						if obj["Numb"] ~= nil then --If the children have a child named "Numb" then
+							local monthNumber = obj["Numb"];
+
+							if monthNumber == sznData.Next_SeasonUpdate_Month then --If the monthNumber is the same as the updateMonth number then
+								if obj["Days"] ~= nil then --IF the child also has a sibling named "Days" then,
+									local monthDays = obj["Days"];
+
+									if sznData.Next_SeasonUpdate_Day >= monthDays then --IF the nextUpdate_Day is greater than the number of days in the real month then,
+										sznData.Next_SeasonUpdate_Month = sznData.Next_SeasonUpdate_Month + 1 --Add 1 month.
+										local newDay = sznData.Next_SeasonUpdate_Day - monthDays --Subtract and determine the new day.
+										if newDay <=0 then --IF the new value is somehow less than or equal to 0,
+											newDay = 1; --reset it to start on the first day.
+										end
+										sznData.Next_SeasonUpdate_Day = newDay; --Update the day of the month that the season update will occur on.
+									end
+								end
+							end
+						end
+					end
+
+				end,
+
+				["ATMPT_SAVE_"] = function() --This function will officialy save the data.
+
+					local saveKEY = (sznData.Data_KEY .. 1); --The key needs to have a(n) 'ID' number with it so we shall put 1 after any key.
+					local attempts, maxAttempts = 0, math.random(4,7) --Used for keeping track of how many attempts the function uses to save.
+					local Save_ATTEMPT_success; --Used to determine if the save was a success or not.
+
+					repeat --Repeat,
+						wait() --Just incase the game were to crash without this... WAIT.
+						attempts = attempts + 1 --Start counting the attempts to get a previous saved data.
+
+						Save_ATTEMPT_success = pcall(function() --IF this function errors, it will not stop the whole script.
+							Season_DataStore:GetAsync(saveKEY) --Attempt to get some kind of previous data from before.
+						end)
+
+						if not Save_ATTEMPT_success then wait(math.random(1,2)) end --IF the function above was not a success, wait and then retry
+
+					until attempts >= maxAttempts or Save_ATTEMPT_success --until the function has tried the maxAttempts value or more times OR the function was a success.
+
+					wait(0.5) ----------
+
+					if Save_ATTEMPT_success then --Success is either true or false. (IF the previous data was found then, (true))
+
+						--Variables:
+						Save_ATTEMPT_success = nil --Reset the success variable so we can use it again.
+						attempts = 0 --Reset the attempts variable so it can be used again.
+						maxAttempts = math.random(4,7) --Change the max attempts to something new.
+
+						local saveTable = { --This is a folder that holds everything we want to save.
+							sznData.season, --the current season.
+							sznData.Last_Month_Saved, --the last month saved.
+							sznData.Last_Year_Saved, --the last year saved.
+							sznData.Last_Day_Saved, --the last day saved.
+							sznData.Last_Sec_Saved, --the last second of the day saved.
+							sznData.Last_Min_Saved, --the last minute of the day saved.
+							sznData.Last_Hour_Saved, --the last hour of the day saved.
+							sznData.Next_SeasonUpdate_Month, --the next month to update.
+							sznData.Next_SeasonUpdate_Year, --the next year to update.
+							sznData.Next_SeasonUpdate_Day, --the next day to update.
+							sznData.Next_SeasonUpdate_Sec, --the next second to update.
+							sznData.Next_SeasonUpdate_Min, --the next minute to update at.
+							sznData.Next_SeasonUpdate_Hour, --the next hour to update at.
+						}----------------
+
+						repeat --Repeat
+							wait() --Just incase the game were to crash without this... WAIT
+							attempts = attempts + 1 --Start counting the attempts to get a previous saved data.
+
+							Save_ATTEMPT_success = pcall(function() --IF this function errors, it will not stop the whole script.
+								Season_DataStore:SetAsync(saveKEY, saveTable) --Attempt to save the info.
+							end)
+
+							if not Save_ATTEMPT_success then wait(1) end --IF the function above was not a success, wait and then retry
+
+						until attempts >= maxAttempts or Save_ATTEMPT_success ----until the function has tried the maxAttempts value or more times OR the function was a success.
+
+						wait(0.2) ---------
+
+						if Save_ATTEMPT_success then --IF the function saving was a success then,
+							--Tell the game:
+							print("[*] Message-]|: Season has been updated to: [" .. sznData.season .. "]; [" .. sznData.Last_Month_Saved .. "/" .. sznData.Last_Day_Saved .. "/" .. sznData.Last_Year_Saved .. "] @ [" .. sznData.Last_Hour_Saved .. ":" .. sznData.Last_Min_Saved .. ":" .. sznData.Last_Sec_Saved .. "]")
+							print("[*] Message-]|: The next season update will be: [" .. sznData.Next_SeasonUpdate_Month .. "/" .. sznData.Next_SeasonUpdate_Day .. "/" .. sznData.Next_SeasonUpdate_Year .. "] @ [" .. sznData.Next_SeasonUpdate_Hour .. ":" .. sznData.Next_SeasonUpdate_Min .. ":" .. sznData.Next_SeasonUpdate_Sec .. "]")
+							return true --Tell the game that the season has successfully saved its stuff.
+						else --IF the function saving was NOT a success then,
+							--tell the game:
+							print("[~] ERR: [SAVE SEASON]|: COULD NOT SAVE NEW SEASON IN DATA FILES. [SEASON UPDATER]") --this should not happen.
+							return false --Tell the game that the season can't be updated... :(
+						end
+
+					else --IF the function could NOT find any kinds of previous data then,
+						--Could not find data.
+						print("[~] ERR: [SAVE SEASON]|: COULD NOT GET ASYNC ON DATA SEASON FILE. [SEASON UPDATER]") --this should not happen.
+						return false --Tell the game that the season can't be updated... :(
+					end
+
+				end,
+
+				-------ADD MORE CUSTOM FUNCTIONS HERE.
+			}
+
+			functions["FIX_DATE"]() --Fix the date just in case it is not a real date.
+
+			local success; --Used to determine if a function was successful or not.
+			local attempts, maxAttempts = 0, 6; --Used to determine how many times a function has run.
+
+			repeat --Repeat
+				wait() --wait
+
+				attempts = attempts + 1 --Add to the attempts so we know how many times the function has run.
+				success = pcall(function() --IF this function errors, it will not stop the whole script.
+					functions["ATMPT_SAVE_"]() --Try to save the season data.
+				end)
+
+				if not success then wait(1) warn("Failed to save season data...") end --IF the function was NOT a success then wait and retry.
+
+			until attempts > maxAttempts or success --Until function has tried to save more than the maxAttempts times or the function was a success.
+
+
+		end,
+
+		["Check_4_Update"] = function() --This function checks to see if the season needs to be updated.
+			--[4/6/20] [15:39]
+
+			Data_Folder.Season_Data.cday = os.date("!*t")["day"]; --Determine the current day in UTC TIME.
+
+			local cmonth = sznData["cmonth"];
+			local cday = sznData["cday"];
+			local cyear = sznData["cyear"];
+			local csec = sznData["csec"];
+			local cmin = sznData["cmin"];
+			local chour = sznData["chour"];
+
+			local UTC_TIME = (math.floor(chour) + 4) --Get the current time in UTC time so it matches up CORRECTLY with the current date.
+			if UTC_TIME >= 24 then --IF the hour appears to be during the next day then,
+				cday = sznData.cday - 1 --The game will think it is a new day and the wrong time after 12 AM. So we must set the day backward to our time for the time being.
+			end
+
+			--Check for season update:
+			local SeasonUpdate_Contributors = { --Everything that contributes to the possibility of the season being update. 
+				--IF:
+				[1] = cmonth == sznData.Next_SeasonUpdate_Month, --the current month is equal to the next season update month.
+				[2] = cmonth > sznData.Next_SeasonUpdate_Month, --the current month is greater than the next season update month.
+				[3] = cday > sznData.Next_SeasonUpdate_Day, --the current day is greater than the next season update day.
+				[4] = cday == sznData.Next_SeasonUpdate_Day, --the current day is equal to the next season update day.
+				[5] = cyear == sznData.Next_SeasonUpdate_Year, --the current year is equal to the next season update year.
+				[6] = cyear > sznData.Next_SeasonUpdate_Year, --The current year is greater than or equal to the next season update year.
+				[7] = math.floor(csec) >= sznData.Next_SeasonUpdate_Sec, --The current second is greater than the next season update second.
+				[8] = math.floor(chour) > sznData.Next_SeasonUpdate_Hour, --the current hour is greater than the next season update hour.
+				[9] = math.floor(chour) == sznData.Next_SeasonUpdate_Hour, -- the current hour is equal to the next season update hour.
+				[10] = math.floor(cmin) >= sznData.Next_SeasonUpdate_Min, --the current minute is greater than or equal to the next season update minute.
+				-- then
+			}
+
+			local UPDATE_NEEDED = false	 --Used to determine if the game needs to update real quickly.
+
+			if SeasonUpdate_Contributors[6] or SeasonUpdate_Contributors[2] then --IF the current year is greater than the next season update year or the current month is greater than the next season update month or the current day is greater than the next update day then,
+				UPDATE_NEEDED = true --the game definitely needs an update.
+			end
+
+			if SeasonUpdate_Contributors[3] then --IF the current day is greater than the next season update day then
+				if SeasonUpdate_Contributors[1] and SeasonUpdate_Contributors[5] then --if the current month and year match up correctly then
+					UPDATE_NEEDED = true --the game needs an update.
+				end
+			end
+
+			if SeasonUpdate_Contributors[4] then --If the current day is equal to the next season update day then,
+				if SeasonUpdate_Contributors[1] and SeasonUpdate_Contributors[5] then --check to make sure the current month and year are correct. If so,
+					if SeasonUpdate_Contributors[8] then --check to see if the hour is greater than the next season update hour.
+						UPDATE_NEEDED = true --Tell the game that an update is needed.
+					elseif SeasonUpdate_Contributors[9] then --If the hour is the same,
+						if SeasonUpdate_Contributors[10] then --check the minutes
+							if SeasonUpdate_Contributors[7] then --check the seconds.
+								UPDATE_NEEDED = true --Tell the game that an update is needed.
+							end
+						end
+					end
+				end
+			end
+
+			if UPDATE_NEEDED == true then --If an update was needed, then
+				return true --Tell the script that the game needs to update.
+				--[NOTE: At this point, THIS function stops.]
+			end
+
+			return false --Tell the game that there is no update needed.
+		end,
+
+		----ADD MORE CUSTOM OBJECTIVE FUNCTIONS HERE.
+	}
+
+	-----------------	--------------------
+	-----------------	--------------------
+
+	if functions[Objective] ~= nil then --IF we can find the corresponding objective in the functions folder then,
+		local runFunction = functions[Objective](); --Invoke the method.
+		return runFunction --Return any kind of info that the function may have returned back.
+	end
+
+	wait(math.random(0.4,0.9)) --breathe.
+end --End of Season_Updater()
+-----
+
+-------------------------				-----------------------			------------------------
+--Season_Updater("Save") --Only have this true when you change the key to the season. It MUST save before it can be loaded. 
+
+local function Attempt_LoadSeason()
+	local Season_Attempts = 0 --Used to determine how many times the function attempted to run.
+	local Max_Season_Attempts = 5 --Used to determine how many times we will allow that function to run.
+	local Load_SEASON_DATA; --Used to determine if the function was a success or not.
+
+	repeat --Repeat
+		wait() --wait
+
+		Season_Attempts = Season_Attempts + 1 --add the attempts up by 1 so we know how many times the function is running
+		Load_SEASON_DATA = Season_Updater("Load") --Run the function. Attempt to load our data.
+
+		if Load_SEASON_DATA == ("NeedsAnUpdate") then --IF the function returns with an update needed,
+			--Save:
+			Season_Updater("Save") --Set up the new season.
+			break --Stop the loop. We now have an up to date season date.
+		end
+
+		if not Load_SEASON_DATA == true then warn("Failed to load season data...") wait(1) end --IF the function was not a success then, wait and retry.
+
+	until Season_Attempts > Max_Season_Attempts or Load_SEASON_DATA == true --Until the function has exceeded the attempt limit or the function was a SUCCESS!
+end
+
+-------------------------
+
+while true do
+	wait(1)
+	
+	local Season_Data = Data_Folder.Season_Data
+
+	Season_Data.csec = math.floor((tick()%60)); --Update the current second of the day.
+	Season_Data.cmin = math.floor(((tick()/60)%60)); --Update the current minute of the day.
+	Season_Data.chour = math.floor(((tick()/3600)%24)); --Update the current hour of the day.
+	--print(Data_Folder.Season_Data.chour .. ":" .. Data_Folder.Season_Data.cmin .. ":" .. Data_Folder.Season_Data.csec)
+
+	
+	local Check_4_SeasonUpdate = Season_Updater("Check_4_Update") --Run the function. Attempt to check and see if there is an available update to be done to the game.
+	if Check_4_SeasonUpdate == true then
+		--[local] Attempt_LoadSeason
+		Attempt_LoadSeason() --Attempt to save the season.
+		--[NOTE: By loading the season again, you are also checking for an official update and that will determine the official update and go from there.]
+
+		--[TODO: FIX: Perhaps notify the players of a new season occuring?]
+	end
+
+end
