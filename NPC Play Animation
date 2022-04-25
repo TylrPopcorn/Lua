@@ -1,0 +1,27 @@
+wait(1)
+--[[
+  The purpose of this script is to load and play an animation into a player/npc. This allow for motions that are not naturally allowed to be controlled
+  normally.
+--]]
+
+local anim = script:FindFirstChild("Anim")
+local human = script.Parent.Humanoid
+
+if anim == nil then --If the animation need cannot be found
+	--Create a new animation:
+	local newAnimation = Instance.new("Animation")
+	newAnimation.Name = "Anim"
+	newAnimation.AnimationId = "http://www.roblox.com/asset/?id=656117400" --PUT animation ID here.
+	newAnimation.Parent = script --give it to this script.
+	
+	anim = newAnimation --update the variable.
+end
+
+if human ~= nil then --IF the script can find the human variabe then
+	local loadAnim = human:LoadAnimation(anim) --Load the animation into the player
+	loadAnim:Play() --Play the animation.
+else
+	warn("Script cannot locate human.") --warn the server that this script cannot work.
+	script.Disabled = true
+end
+
