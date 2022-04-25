@@ -4,6 +4,6 @@
 
 for i = 1, 20 do --Loop.
    wait()
-   script.Parent:SetPrimaryPartCFrame(script.Parent.PrimaryPart.CFrame*CFrame.new(0, 1, 0) ) --move in a directioon.
+   script.Parent:SetPrimaryPartCFrame(script.Parent.PrimaryPart.CFrame*CFrame.new(0, 1, 0) ) --move in a direction.
 end
 
