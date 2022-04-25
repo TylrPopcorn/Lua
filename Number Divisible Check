@@ -1,0 +1,22 @@
+--[[
+  The purpose of this script is to check and see if certain numbers are divisible by 2.
+--]]
+
+local spawnNumber = 0 --Used to determine how many times the number has been added to.
+
+while true do --loop
+	task.wait(4)
+	print("-----------") --spacer
+	
+	spawnNumber = spawnNumber + 1 --start counting upward.
+	
+	if (spawnNumber%2 == 0) then --If the current player number can be easily divided by 2 then
+		print("YES") --true
+	else
+		print("NO") --false
+	end
+	
+	print("-----------") --spacer
+end
+
+
