@@ -1,5 +1,5 @@
 --[[
-  This will move a MODEL in a certain direction for a certain amount of time.
+  This will move a MODEL in a certain direction for a certain amount of time. Smoothly.
 --]]
 
 for i = 1, 20 do --Loop.
