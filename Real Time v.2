@@ -1,0 +1,42 @@
+--[[
+  Matches up the current time in real life evenly with ROBLOX studio and in live servers. The issue was that Studio was 4-5 hours ahead in UTC time.
+]]
+
+local timed;
+local timeZone = 0 --0 = THE CURRENT TIME ZONE YOU ARE IN
+
+local studio = false --Used to determine if studio is active or not.
+if game:GetService("RunService"):IsStudio() == true then --IF the studio is active
+	studio = true --set to true.
+end
+	
+while true do --Loop
+	
+	local hour, min, sec; --Used to determine the current time.
+	local conversion;
+	
+	if studio == false then --IF the studio is not active.
+		conversion = (math.floor((tick()/3600)%24 + timeZone)-5)  --subtact.
+		--[NOTE: for some reason the time is different in live game. So subtract 5 to match it up with real time.]
+		
+		if conversion < 0 then
+			conversion = 24 + conversion --subtract from 24 to match up the right time.
+		end
+		hour = conversion --set.
+		
+	else --ELSE if the studio is active then
+		conversion = (math.floor((tick()/3600)%24 + timeZone))
+		if conversion > 24 then
+			conversion = conversion - 24 --Get the next time.
+		end
+		hour = conversion
+	end
+	
+	min = math.floor(((tick()/60)%60)) --Set the current min
+	sec = math.floor((tick()%60)) --Set the current sec.
+	
+	timed = (hour .. ":" .. min .. ":" .. sec)
+	print(timed) --Output
+	game.Lighting.TimeOfDay = timed
+	wait(1) --Breathe
+end
