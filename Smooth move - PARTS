@@ -1,0 +1,11 @@
+wait(1)
+--[[
+  The purpose of this script is to move a 'part' in a certain direction for a certain amount of time.
+--]]
+
+for i = 1, 20 do --Loop
+	wait()
+	script.Parent.CFrame = script.Parent.CFrame * CFrame.new(0, -1, 0) --Move the block in a certain direction.
+end
+
+
