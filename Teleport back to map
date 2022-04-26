@@ -1,0 +1,56 @@
+--billybobtijoseph. 12/13/19 - 12:38 PM
+wait(math.random(0.5,3))
+
+--[[ Purpose:
+  Teleport any player back to a designated area after touching a certain block.
+--]]
+
+local Debounce = false
+local Home = script.Parent
+local SpawnLocations = Home.Parent:WaitForChild("SpawnLocations") --This script cannot work without this.
+
+if SpawnLocations then
+	for i,x in pairs(Home:GetChildren()) do --Get the children of the home variable.
+		if x.ClassName == "Part" then --Check and make sure it cooresponds to what we need it with.
+			if x.Name == "Mover" then --Make sure it is the part we need
+				
+				x.Touched:Connect(function(hit) --Correct part touched.
+					if hit then
+						if hit.Parent then
+							if hit.Parent:FindFirstChild("Humanoid") then --Make sure it is a humanoid only.
+								if Debounce == false then
+									Debounce = true
+									
+									local Player = hit.Parent
+									
+									Player.Humanoid.PlatformStand = true --Prevent the player from moving.
+									wait(math.random(0.1,0.5))
+									
+									repeat --Repeat
+										wait(0.1)
+										randomSpot = (SpawnLocations:GetChildren()[math.random(1,#SpawnLocations:GetChildren())]) --Look for a spot to teleport the player.
+									until randomSpot.ClassName == "Part" --Until we come across a successful spot.
+									
+									Player:MoveTo(Vector3.new(randomSpot.Position.X, randomSpot.Position.Y - math.random(10,20), randomSpot.Position.Z)) --Teleport the player.
+									wait(math.random(0.1,0.3))
+									
+									Player.Humanoid.PlatformStand = false --Allow the player to move again.
+									
+									wait(math.random(0.1,0.2))
+									Debounce = false --Allow the debounce to be used again.
+									
+								end
+							end
+						end
+					end
+				end)
+				
+			end
+		end
+	end
+else --If the SpawnLocations model could not be found,
+	print("MOVER ERROR - COULD NOT FIND SPAWN LOCATIONS.") --Tell the game that we cannot find them. (THIS SHOULD NEVER HAPPEN.)
+end
+	
+	
+	
