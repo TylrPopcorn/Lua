@@ -1,0 +1,11 @@
+--7/5/12
+
+l = game:service("Lighting")
+while true do
+   wait(0.1)
+l:SetMinutesAfterMidnight(l:GetMinutesAfterMidnight()+1)
+
+end 
+
+
+
