@@ -1,0 +1,52 @@
+--[5/4/20]
+--[[ The purpose of this script is to sort a table/array.]]
+
+local SortedVotes = {} --Used to hold the info of the sorted stuff.
+
+local vFold = Instance.new("Folder") --For holding voting data.
+vFold.Name = "VotesFolder"
+vFold.Parent = script
+	
+for i,x in pairs(script:GetChildren()) do --Get the children of the script
+	if x:FindFirstChild("Votes") then --IF the child has a child named ("") then
+					
+		local newval = Instance.new("StringValue") --Create a new ("")
+		newval.Name = "OName"
+		newval.Value = x.Name --Change the value to the name of the original child.
+		newval.Parent = x.Votes --Put the new instance value into the child of the original child.
+		x.Votes.Name = x.Name --Change the name of the child of the original child to the name of the original child.
+		
+		
+		table.insert(SortedVotes, x[x.Name]) --Insert the values into a table.
+		x[x.Name].Parent = nil  --remove the parent of the child of the original child..
+		x:Destroy() --destroy the original child.
+		
+	end
+end
+
+table.sort(SortedVotes, function(a, b) --Then sort those values from least to greatest.
+	return a.Value > b.Value
+end)
+
+local Ties = {}
+local counters = 0
+local lastOjbect = nil
+for _, Object in pairs(SortedVotes) do --Get the children of the table
+	wait(0.1)
+	if lastOjbect ~= Object.Value then --if the last object that we got is different than the current object then
+		counters = counters + 1 --add 1 to the counter.
+		lastOjbect = Object.Value --make the last object the current object.
+		Object.Name = counters --change the name of the current object to the counter val.
+	else --IF the current object is the same
+		Object.Name = counters --name the current object to the current ocunter val.
+		lastOjbect = Object.Value --make the last object the current object.
+	end
+
+	if Object.Name == "1" then
+		print(Object.Name)
+	end
+	Object.Parent = vFold
+end
+
+
+
