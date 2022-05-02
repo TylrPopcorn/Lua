@@ -1,0 +1,131 @@
+wait(math.random(1,2))
+--billy
+--[[
+
+	Simply changes the color of the bar lights.
+
+]]
+------------
+local tweenService = game:GetService("TweenService")
+local tweenInformation = TweenInfo.new(6) -- Time1
+local ColorProperty = {}
+
+local model = script.Parent --The main moddel.
+
+local parts = {
+	model.Top_LightBar.LEDBR;
+	model.Border_LightBar;
+	model.Logos;
+	model.Center_Poidum_Light;
+	model.SideLights;
+	model.WALLS;
+	model.Title;
+}
+
+local indicator = model.LED_Color
+--------------------------
+---FUNCTIONS
+
+local color = BrickColor.random().Color
+
+local function Change(BColor) --This changes the bar lightss
+	local CO = BrickColor.new(BColor)
+	ColorProperty.Color = CO.Color --Add a new color to the table.
+	
+	local ColorProperty2 = {}
+	local sub = 0.58
+	ColorProperty2.Color = Color3.new(math.clamp(CO.Color.R-sub, 0, 1), math.clamp(CO.Color.G-sub, 0, 1), math.clamp(CO.Color.B-sub, 0, 1))
+	
+	for nam2, obj2 in pairs(parts[1]:GetChildren()) do
+		if obj2.ClassName == "Part" then --if the chilldd is a bar then
+			local tween = tweenService:Create(obj2,tweenInformation,ColorProperty) --create a smooth transsition
+			tween:Play() --play the transition.
+
+			if obj2:FindFirstChild("SurfaceLight") then --If the object has a light insdie of it then
+				tween = tweenService:Create(obj2.SurfaceLight,tweenInformation,ColorProperty) --create a smooth transsition
+				tween:Play() --play the transition.
+				--obj2.SurfaceLight.Color = BrickColor.new(BColor).Color --change th elight color.
+			end
+
+		end
+	end
+	
+	for nam2, obj2 in pairs(parts[2]:GetChildren()) do
+		if obj2.ClassName == "Part" then --if the chilldd is a bar then
+			local tween = tweenService:Create(obj2,tweenInformation,ColorProperty) --create a smooth transsition
+			tween:Play() --play the transition
+		end
+	end
+
+	for nam2, obj2 in pairs(parts[3]:GetChildren()) do
+		local tween1 = tweenService:Create(obj2.Back,tweenInformation,ColorProperty) --create a smooth transsition
+		tween1:Play() --play the transition.
+		local tween2 = tweenService:Create(obj2.Logo,tweenInformation,ColorProperty2) --create a smooth transsition
+		tween2:Play() --play the transition.
+		local tween3 = tweenService:Create(obj2.Center.Part,tweenInformation,ColorProperty) --create a smooth transsition
+		tween3:Play() --play the transition.
+		local tween4 = tweenService:Create(obj2.Center.SurfaceLight,tweenInformation,ColorProperty) --create a smooth transsition
+		tween4:Play() --play the transition.
+	end
+	
+	for nam2, obj2 in pairs(parts[4]:GetChildren()) do
+		if obj2.ClassName == "Part" then --if the chilldd is a bar then
+			local tween = tweenService:Create(obj2,tweenInformation,ColorProperty) --create a smooth transsition
+			tween:Play() --play the transition
+		end
+	end
+	
+	for nam2, obj2 in pairs(parts[5]:GetChildren()) do
+		local tween1 = tweenService:Create(obj2.Glass_LIGHT,tweenInformation,ColorProperty) --create a smooth transsition
+		tween1:Play() --play the transition.
+		local tween2 = tweenService:Create(obj2.Glass_LIGHT.PointLight,tweenInformation,ColorProperty) --create a smooth transsition
+		tween2:Play() --play the transition.
+	end
+	
+	local placeHolder = nil
+	for nam2, obj2 in pairs(parts[6]:GetChildren()) do
+		for nam3,obj3 in pairs(obj2:GetChildren()) do
+			if obj3.Name == "DESIGN" then
+				if ColorProperty2.Color ~= nil then
+					placeHolder = ColorProperty2.Color
+					ColorProperty2.Color = nil
+				end
+				
+				ColorProperty2.Color3 = Color3.new(math.clamp(CO.Color.R-sub, 0, 1), math.clamp(CO.Color.G-sub, 0, 1), math.clamp(CO.Color.B-sub, 0, 1))
+				local tween = tweenService:Create(obj3,tweenInformation,ColorProperty2) --create a smooth transsition
+				tween:Play() --play the transition.
+			end
+		end
+		
+		ColorProperty2.Color3 = nil
+		if placeHolder ~= nil then
+			ColorProperty2.Color = placeHolder
+		end
+	end
+	
+	for nam2, obj2 in pairs(parts[7]:GetChildren()) do
+		for nam3,obj3 in pairs(obj2:GetChildren()) do
+			local tween1 = tweenService:Create(obj3,tweenInformation,ColorProperty) --create a smooth transsition
+			tween1:Play() --play the transition.
+		end
+	end
+end
+
+
+--START:
+--9/7/21.
+local indicatorChanged = false --Used to regulate th efunction below.
+indicator.Changed:Connect(function() --Each time the indicator changes
+	if indicatorChanged == false then --if the efunction is not alreeady running then
+		indicatorChanged = true --allow the function to run
+		
+		Change(tostring(indicator.Value)) --change the bars to whatever color thee indicator chooses.
+		
+		wait(0.1) --breathe
+		indicatorChanged = false --allow thee function to run aagain because this is over now.
+	end
+end)
+
+Change(tostring(indicator.Value)) --staart.
+
+
