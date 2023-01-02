@@ -1,0 +1,14 @@
+--Literally useless.
+
+local console = { --ALL of the functions in the 'console'
+  
+  log = function(output) --println()
+    print(output)
+  end,
+  
+  --ADD MORE 'console' functions here:
+}
+
+console.log("Hello world.") --print
+
+
